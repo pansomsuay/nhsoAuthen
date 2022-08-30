@@ -79,7 +79,7 @@ class PrintObserver(CardObserver):
                     self.tv_claimtype.set(lastDataAuthen['claimType'])
                     self.tv_claimcode.set(lastDataAuthen['claimCode'])
                     self.tv_createdate.set(lastDataAuthen['claimDateTime'])
-                    self.tv_status.set("!!ไม่สามารถขอ Authen มากกว่า 2 ครั้งในวันได้!!")
+                    self.tv_status.set("!!ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้!!")
                 else:
                     print("AuthenDetial XXXXXX")
                     
@@ -96,7 +96,7 @@ class PrintObserver(CardObserver):
                         self.tv_hometel.set(hometel)
                         self.tv_claimtype.set(lastDataAuthen['claimType'])
                         self.tv_claimcode.set(lastDataAuthen['claimCode'])
-                        self.tv_createdate.set(lastDataAuthen['createdDate'])
+                        self.tv_createdate.set(lastDataAuthen['claimDateTime'])
                         self.tv_status.set("!!ไม่สามารถขอ Authen มากกว่า 2 ครั้งในวันได้!!")
                     else:
                         self.tv_cid.set(cid)
