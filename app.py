@@ -81,8 +81,7 @@ class PrintObserver(CardObserver):
                     self.tv_createdate.set(lastDataAuthen['claimDateTime'])
                     self.tv_status.set("!!ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้!!")
                 else:
-                    print("AuthenDetial XXXXXX")
-                    
+                   
                     AuthenDetial=nhsoAuthen.confirmSave(hometel, cid)
                     print("รายการ",AuthenDetial)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
