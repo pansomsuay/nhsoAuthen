@@ -58,6 +58,7 @@ class PrintObserver(CardObserver):
                     self.tv_status.set("ไม่สามารถติดต่อกับ สปสช.ได้ กรุณาลองอีกครั้ง") 
                     break
                 hometel = getData.getMobilePhone(cid)
+                hn= getData.getHn(cid)
                 
                 if hometel.isnumeric() and len(hometel)==10:
                     statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
@@ -82,7 +83,7 @@ class PrintObserver(CardObserver):
                     self.tv_status.set("!!ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้!!")
                 else:
                    
-                    AuthenDetial=nhsoAuthen.confirmSave(hometel, cid)
+                    AuthenDetial=nhsoAuthen.confirmSave(hometel, cid, hn)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
                     print(AuthenDetial)
 
@@ -111,7 +112,8 @@ class PrintObserver(CardObserver):
                         
                         self.tv_claimtype.set(AuthenDetial['claimType'])
                         self.tv_claimcode.set(AuthenDetial['claimCode'])
-                        self.tv_createdate.set(AuthenDetial['createDate']) 
+
+                        self.tv_createdate.set(AuthenDetial['createDate'])
                         self.tv_status.set("ยืนยันตัวตนเรียบร้อยแล้ว")        
                    
 
@@ -142,7 +144,7 @@ def gui():
             config.write(configfile)
     
     root = Tk()
-    root.geometry('515x580')
+    root.geometry('540x300')
     root['bg']='#235D3A'
     root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO]")
     tv_cid = StringVar()
@@ -158,75 +160,75 @@ def gui():
     radio = StringVar()
     
     #ส่วนของการแสดงผลข้อมูลบัตรประชาชน
-    labelframe = LabelFrame(root, text="ข้อมูลบัตรประชาชน",font=("bold",14),width='475',height='220', bg='#235D3A',fg='#fff')
-    labelframe.place(x=15,y=80)
+    labelframe = LabelFrame(root, text="ข้อมูลบัตรประชาชน",font=("bold",12),width='300',height='190', bg='#235D3A',fg='#fff')
+    labelframe.place(x=15,y=60)
 
-    label_cid = Label(root, text="เลขประจำตัวประชาชน",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_cid.place(x=20,y=120)
-    label_name = Label(root, text="ชื่อ-นามสกุล",width=20,font=("bold", 12),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
-    label_name.place(x=20,y=150)
-    label_birth = Label(root, text="อายุ",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_birth.place(x=20,y=180)
-    label_pttype = Label(root, text="สิทธิการรักษา",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_pttype.place(x=20,y=210)
-    label_hometel = Label(root, text="เบอร์โทรศัพท์",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_hometel.place(x=20,y=240)
+    label_cid = Label(root, text="เลขบัตรประชาชน",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_cid.place(x=20,y=90)
+    label_name = Label(root, text="ชื่อ-นามสกุล",width=10,font=("bold", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
+    label_name.place(x=20,y=120)
+    label_birth = Label(root, text="อายุ",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_birth.place(x=20,y=150)
+    label_pttype = Label(root, text="สิทธิการรักษา",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_pttype.place(x=20,y=180)
+    label_hometel = Label(root, text="เบอร์โทรศัพท์",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_hometel.place(x=20,y=210)
     #
-    lbl_cid = Label(root, width=20, textvariable=tv_cid,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_cid.place(x=250,y=120)
-    lbl_name = Label(root, width=20, textvariable=tv_name,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_name.place(x=250,y=150)
-    lbl_birth = Label(root, width=20, textvariable=tv_birth,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_birth.place(x=250,y=180)
-    lbl_pttype = Label(root, width=20, textvariable=tv_pttype,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_pttype.place(x=250,y=210)
-    lbl_hometel = Label(root, width=20, textvariable=tv_hometel,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_hometel.place(x=250,y=240)
+    lbl_cid = Label(root, width=20, textvariable=tv_cid,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_cid.place(x=120,y=90)
+    lbl_name = Label(root, width=20, textvariable=tv_name,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_name.place(x=120,y=120)
+    lbl_birth = Label(root, width=20, textvariable=tv_birth,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_birth.place(x=120,y=150)
+    lbl_pttype = Label(root, width=20, textvariable=tv_pttype,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_pttype.place(x=120,y=180)
+    lbl_hometel = Label(root, width=20, textvariable=tv_hometel,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_hometel.place(x=120,y=210)
     
     #ส่วนของการแสดงผลข้อมูลยืนยันตัวตน
-    labelframe = LabelFrame(root, text="ข้อมูลยืนยันตัวตน",font=("bold",14),width='475',height='150', bg='#235D3A',fg='#fff')
-    labelframe.place(x=15,y=320)
+    labelframe = LabelFrame(root, text="ข้อมูลยืนยันตัวตน",font=("bold",12),width='200',height='190', bg='#235D3A',fg='#fff')
+    labelframe.place(x=320,y=60)
     #
-    label_claimType = Label(root, text="ประเภทการเข้ารับบริการ",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_claimType.place(x=20,y=350)
-    label_claimCode = Label(root, text="claimCode",width=20,font=("bold", 12),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
-    label_claimCode.place(x=20,y=380)
-    label_datetime = Label(root, text="วันที่เข้ารับบริการ",width=20,font=("bold", 12),bg='#235D3A',fg='#C0EDD0',anchor='e')
-    label_datetime.place(x=20,y=410)
+    label_claimType = Label(root, text="ClaimType",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_claimType.place(x=330,y=90)
+    label_claimCode = Label(root, text="claimCode",width=10,font=("bold", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
+    label_claimCode.place(x=330,y=120)
+    label_datetime = Label(root, text="วันที่เข้ารับบริการ",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_datetime.place(x=330,y=150)
     #
-    lbl_claimtype = Label(root, width=20, textvariable=tv_claimtype,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_claimtype.place(x=250,y=350)
-    lbl_claimcode = Label(root, width=20, textvariable=tv_claimcode,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_claimcode.place(x=250,y=380)
-    lbl_createdate = Label(root, width=20, textvariable=tv_createdate,font=("bold", 12),bg='#74927A',fg='#fff')
-    lbl_createdate.place(x=250,y=410)
+    lbl_claimtype = Label(root, width=10, textvariable=tv_claimtype,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_claimtype.place(x=420,y=90)
+    lbl_claimcode = Label(root, width=10, textvariable=tv_claimcode,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_claimcode.place(x=420,y=120)
+    lbl_createdate = Label(root, width=10, textvariable=tv_createdate,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_createdate.place(x=420,y=150)
 
     #สถานะบัต่รประชาชน
-    lbl_status = Label(root, width=30, textvariable=tv_status,font=("bold", 20),bg='#235D3A',fg='#fff')
-    lbl_status.place(x=10,y=20)
+    lbl_status = Label(root, width=30, textvariable=tv_status,font=("bold", 16),bg='#235D3A',fg='#fff')
+    lbl_status.place(x=90,y=15)
     
     
     
     #ประเภทการเข้ารับบริการ claim type
     R1 = Radiobutton(root, text="OPD/ IPD/ PP", variable=radio,bg='#73C088', value='PG0060001',
                   command=selection)
-    R1.place(x=20,y=480)  
+    R1.place(x=20,y=260)  
     R1.select()
 
     R2 = Radiobutton(root, text="Home Isolation", variable=radio,bg='#73C088', value='PG0090001' ,  
                   command=selection)  
-    R2.place(x=120,y=480)   
+    R2.place(x=120,y=260)   
     R3 = Radiobutton(root, text="Self Isolation", variable=radio,bg='#73C088',value='PG0110001' ,  
                   command=selection)  
-    R3.place(x=225,y=480)
+    R3.place(x=225,y=260)
     
     R4 = Radiobutton(root, text="HD", variable=radio,bg='#73C088',value='PG0130001' ,  
                   command=selection)  
-    R4.place(x=312,y=480) 
+    R4.place(x=312,y=260) 
 
     R4 = Radiobutton(root, text="UCEP PLUS", variable=radio,bg='#73C088', value='PG0120001' ,  
                   command=selection)  
-    R4.place(x=350,y=480) 
+    R4.place(x=350,y=260) 
 
 
     #เชื่อมต่อ CardMonitor

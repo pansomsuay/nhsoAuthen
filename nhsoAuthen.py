@@ -46,7 +46,7 @@ def readCard():
 
 
 
-def confirmSave(hometel,cid):
+def confirmSave(hometel,cid,hn):
     claimType = config.get('ClaimType', 'code')
     while True:
         try:
@@ -67,7 +67,7 @@ def confirmSave(hometel,cid):
                     "claimType": claimType,
                     "mobile": hometel,
                     "correlationId": correLation,
-                    "hn": "string",
+                    "hn": hn,
                     "hcode": HospCode
                             }
                 try:

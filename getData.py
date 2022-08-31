@@ -91,6 +91,7 @@ def checkCard():
                     return cid
                     
                 except SWException as e:
+                    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
                     print(str(e))                  
   
 def getMobilePhone(cid):
@@ -108,5 +109,21 @@ def getMobilePhone(cid):
         for row in results:
             hometel = row['hometel']
     return hometel
+
+def getHn(cid):
+    try:
+        connection = mydb.getConnection()
+        cursor = connection.cursor()
+        sql = "SELECT REPLACE(p.hn,'-','') as hn FROM patient p WHERE p.cid =%s"
+        cursor.execute(sql, (cid))
+        
+    except pymysql.InternalError as error:
+        print("[ Wanning ] No Connecttion Database!!!")
+    
+    else:
+        results = cursor.fetchall()
+        for row in results:
+            hn = row['hn']
+    return hn
 
 
