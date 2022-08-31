@@ -96,12 +96,21 @@ def confirmSave(hometel,cid):
                         return result_save
 
 
-                    if response_save.status_code ==400:
+                    elif response_save.status_code ==400:
                         print(result_save["errors"][0]["defaultMessage"])
+
+                    else:
+                       print("ไม่สามารถติดต่อกับ Service สปสช. ได้")
+                       return True
                         
 
                 except requests.exceptions.Timeout as e:
                     print(e)
+
+            else:
+                print("ไม่สามารถติดต่อกับ Service สปสช. ได้")
+                return True 
+
 def saveDraft(hometel,cid):
     config.read('app-config.ini')
     claimType = config.get('ClaimType', 'code')

@@ -83,8 +83,9 @@ class PrintObserver(CardObserver):
                 else:
                    
                     AuthenDetial=nhsoAuthen.confirmSave(hometel, cid)
-                    print("รายการ",AuthenDetial)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
+                    print(AuthenDetial)
+
                     if AuthenDetial == False: #Authen มากกว่า 2 ครั้ง
                         lastDataAuthen = nhsoAuthen.returnLatedAuthen(cid)
                          
@@ -97,6 +98,10 @@ class PrintObserver(CardObserver):
                         self.tv_claimcode.set(lastDataAuthen['claimCode'])
                         self.tv_createdate.set(lastDataAuthen['claimDateTime'])
                         self.tv_status.set("!!ไม่สามารถขอ Authen มากกว่า 2 ครั้งในวันได้!!")
+
+                    elif AuthenDetial == True: #ไม่สามารถเชื่อมต่อ Server ได้
+                        self.tv_status.set("!!ไม่สามารถเชื่อมต่อ Service สปสช. ได้!!")
+
                     else:
                         self.tv_cid.set(cid)
                         self.tv_name.set(readcard_api['fname']+' '+readcard_api['lname'])
@@ -106,7 +111,7 @@ class PrintObserver(CardObserver):
                         
                         self.tv_claimtype.set(AuthenDetial['claimType'])
                         self.tv_claimcode.set(AuthenDetial['claimCode'])
-                        self.tv_createdate.set(AuthenDetial['claimDateTime']) 
+                        self.tv_createdate.set(AuthenDetial['createDate']) 
                         self.tv_status.set("ยืนยันตัวตนเรียบร้อยแล้ว")        
                    
 
