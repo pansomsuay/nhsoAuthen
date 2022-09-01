@@ -47,6 +47,7 @@ def readCard():
 
 
 def confirmSave(hometel,cid,hn):
+    config.read('app-config.ini')
     claimType = config.get('ClaimType', 'code')
     while True:
         try:
@@ -73,7 +74,7 @@ def confirmSave(hometel,cid,hn):
                 try:
                     response_save = requests.post(url_confirm_save, json = cliamJson,timeout=1)
                     result_save = response_save.json()
-                    #print(result_save)
+                    print(result_save)
                     if "error" in result_save:
                         return False #กรณีไม่สามารถ Authen ซ้ำในวันเดียวกันมากกว่า 2 ครั้ง
 
