@@ -3,7 +3,15 @@ import configparser
  
 # Function return a connection.
 
-
+def chkConnection(host,user,password,db):
+    
+    connection = pymysql.connect(host=host,
+                             user=user,
+                             password=password,                             
+                             db=db,
+                             charset='tis620',
+                             cursorclass=pymysql.cursors.DictCursor)
+    return connection
 
 def getConnection():
     config = configparser.RawConfigParser()
@@ -25,6 +33,15 @@ def getConnection():
     
     return connection
  
-getConnection()
+def testConnectDB():
+        try:
+            connection = getConnection()
+            cursor = connection.cursor()
+            cursor.execute("SELECT VERSION()")
+            results = cursor.fetchone()
+            print ("CONNECTION SUCCESSFULL")     
+        except:
+            print ("ERROR IN CONNECTION")
+            return False
 
  
