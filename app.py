@@ -1,8 +1,11 @@
 from __future__ import print_function
 from asyncio.windows_events import NULL
+from cProfile import label
 from itertools import count
+from msilib.schema import ComboBox
 from multiprocessing.sharedctypes import Value
 from tkinter.messagebox import showerror, showinfo, showwarning
+from tkinter.ttk import Combobox
 from turtle import bgcolor, color
 from smartcard.CardMonitoring import CardMonitor, CardObserver
 #from smartcard.util import toHexString
@@ -23,14 +26,19 @@ import configparser
 import mydb
 import getData
 import nhsoAuthen
-from tkinter import ttk
-from functools import partial  
+  
+import win32api
+import win32print
+
 
 config = configparser.RawConfigParser()
 config.read('app-config.ini')
 config.set('ClaimType','code','PG0060001')
+config.set('ClaimType','activeprint','N')
+
 with open('app-config.ini', 'w') as configfile:
             config.write(configfile)
+
 
 # a simple card observer that prints inserted/removed cards
 class PrintObserver(CardObserver):
@@ -50,38 +58,58 @@ class PrintObserver(CardObserver):
         self.tv_status = tv_status
         self.tv_status.set("กรุณาเสียบบัตรประจำตัวประชาชน")
         self.tv_claim = tv_status
-        
+           
          
     def update(self, observable, actions):
         
         (addedcards, removedcards) = actions
 
         for card in addedcards:
-
+                hn=""
+                hometel=""
+                statusLastAuthen=False
                 print("+Inserted: ", toHexString(card.atr))    
                 self.tv_status.set("----กำลังอ่านข้อมูลจากบัตร---")
                 cid = getData.checkCard()   #อ่าน CID จาก SmartCard 
                 readcard_api = nhsoAuthen.readCard() #อ่าน CID จาก API
 
                 if readcard_api == False:
-                    self.tv_status.set("ไม่สามารถติดต่อกับ สปสช.ได้ กรุณาลองอีกครั้ง") 
+                    self.tv_status.set("กรณาตรวจสอบ NHSO Secure SmartCard Agent") 
                     break
-
-                hometel = getData.getMobilePhone(cid)
-                hn= getData.getHn(cid)
+                elif readcard_api != False:
+                    
+                    hometel = getData.getMobilePhone(cid)
+                    hn= getData.getHn(cid)
                 
+                if hn =="":
+                    self.tv_status.set("!!ไม่ข้อมูล HN ใน HOSxP!!")
+                    continue 
+
+                if hometel =="":
+                    inputtelGui()
+                    hometel = tel
+                   
                 if hometel.isnumeric() and len(hometel)==10:
-                    statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
-                    print(statusLastAuthen)
+                    try:
+                        statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
+                        
+                    except:
+                        print("[]")
+                    else:
+                        self.tv_status.set("--กำลังตรวจสอบข้อมูล-")
+                        
                 else:
                     print("[INFO:] Hometel is Error")
                     #nhsoAuthen.playsound("noHomeTel.mp3")
-                    self.tv_status.set("!!ไม่พบหมายเลขโทรศัพท์ในฐานข้อมูล!!")
+                    self.tv_status.set("!!กรุณาตรวจสอบหมายเลขโทรศัพท์!!")
+                    break
+
+              
+                   
                 if statusLastAuthen is True:
                     #nhsoAuthen.playsound('authenRepeat.mp3')
                     print("[Warnning:] ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้")
                     lastDataAuthen=nhsoAuthen.returnLatedAuthen(cid)
-                    self.tv_status.set("!!ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้!!")
                     self.tv_cid.set(cid)
                     self.tv_name.set(readcard_api['fname']+' '+readcard_api['lname'])
                     self.tv_birth.set(readcard_api['age'])
@@ -92,7 +120,7 @@ class PrintObserver(CardObserver):
                     self.tv_createdate.set(lastDataAuthen['claimDateTime'])
                     self.tv_status.set("!!ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้!!")
                 else:
-                    print("XXXX")
+                    
                     AuthenDetial=nhsoAuthen.confirmSave(hometel, cid, hn)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
                     print(AuthenDetial)
@@ -145,6 +173,40 @@ class PrintObserver(CardObserver):
             
             print("-Removed: ", toHexString(card.atr))
 
+def inputtelGui():
+    
+
+    def telSubmit(event= None):
+        global tel
+        tel = mobile.get()
+        print(tel)
+        telWindows.destroy()
+    
+    def disable_event():
+        pass
+    
+    telWindows=Tk()
+    telWindows.geometry('300x130+610+380')
+    telWindows['bg']='#73C088'
+    telWindows.title("nhsoAuthen")
+    mobile = StringVar(telWindows)
+    telWindows.bind('<Return>', telSubmit)
+    telWindows.resizable(False, False)
+    telWindows.protocol("WM_DELETE_WINDOW", disable_event)
+
+    lbl_tel = Label(telWindows,text ="กรุณาใส่หมายเลขโทรศัพท์",font=("bold", 16),bg='#73C088',fg='#000')
+    lbl_tel.place(x=10,y=10)
+    tel_entry = Entry(telWindows,width=10,textvariable = mobile,font=("bold", 25),bg='#74927A',fg='#fff')
+    tel_entry.place(x=10,y=50)
+    tel_entry.focus()
+    sub_btn=Button(telWindows,text = 'บันทึก',font=("bold", 16),bg='#235D3A',fg='#fff',command=telSubmit)
+    sub_btn.place(x=200,y=50)
+
+    telWindows.lift()
+    telWindows.attributes("-topmost", True)
+    telWindows.mainloop()
+
+    
 def dbSettingGui():
      
     def settingClose():
@@ -164,6 +226,18 @@ def dbSettingGui():
         settingClose()
 
     def testConnectDB():
+        config = configparser.RawConfigParser()
+        config.read('app-config.ini')
+        config.set('HOSxP','ip',host_var.get())
+        config.set('HOSxP','db',database_var.get())
+        config.set('HOSxP','user',user_var.get())
+        config.set('HOSxP','password',pass_var.get())
+        config.set('HOSxP','hn',hn_var.get())
+        config.set('HOSxP','hospcode',hospcode_var.get())
+        with open('app-config.ini', 'w') as configfile:
+            config.write(configfile)
+
+
         host = host_var.get()
         user = user_var.get()
         password = pass_var.get()
@@ -177,14 +251,12 @@ def dbSettingGui():
             showinfo("nhsoAuthen","CONNECTION SUCCESSFULL")
             print ("CONNECTION SUCCESSFULL")     
         except:
-            showwarning("nhsoAuthen","CONNECTION ERRORc!!")
+            showwarning("nhsoAuthen","CONNECTION ERROR!!")
             print ("ERROR IN CONNECTION")
             return False
 
-
-
     dbWindows=Tk()
-    dbWindows.geometry('320x280')
+    dbWindows.geometry('320x320+610+300')
     dbWindows['bg']='#235D3A'
     dbWindows.title("Database Connection")
     host_var =StringVar(dbWindows)
@@ -193,6 +265,7 @@ def dbSettingGui():
     pass_var =StringVar(dbWindows)
     hn_var =StringVar(dbWindows)
     hospcode_var=StringVar(dbWindows)
+    print_var = StringVar(dbWindows)
    
     config = configparser.RawConfigParser()
     config.read('app-config.ini')
@@ -210,9 +283,8 @@ def dbSettingGui():
     hn_var.set(hn)
     hospcode_var.set(hospcode)
 
-
         #ส่วนของการแสดงผลข้อมูลบัตรประชาชน
-    labelframe = LabelFrame(dbWindows, text="ตั้งค่าการเชื่อมต่อฐานข้อมูล",font=("bold",10),width='300',height='210', bg='#235D3A',fg='#fff')
+    labelframe = LabelFrame(dbWindows, text="ตั้งค่าการเชื่อมต่อฐานข้อมูล",font=("bold",10),width='300',height='250', bg='#235D3A',fg='#fff')
     labelframe.place(x=10,y=10)
     label_host = Label(dbWindows, text="Host",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_host.place(x=15,y=40)
@@ -227,27 +299,44 @@ def dbSettingGui():
     label_hospcode = Label(dbWindows, text="รหัสโรงพยาบาล",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_hospcode.place(x=15,y=190)
 
-    host_entry = Entry(dbWindows,textvariable = host_var,font=("bold", 10))
+    host_entry = Entry(dbWindows,textvariable = host_var,font=("bold", 10),bg='#74927A',fg='#fff')
     
     host_entry.place(x=120,y=40)
-    database_entry = Entry(dbWindows,textvariable = database_var,font=("bold", 10))
+    database_entry = Entry(dbWindows,textvariable = database_var,font=("bold", 10),bg='#74927A',fg='#fff')
     database_entry.place(x=120,y=70)
-    user_entry = Entry(dbWindows,textvariable = user_var,font=("bold", 10))
+    user_entry = Entry(dbWindows,textvariable = user_var,font=("bold", 10),bg='#74927A',fg='#fff')
     user_entry.place(x=120,y=100)
-    password_entry = Entry(dbWindows,textvariable = pass_var,font=("bold", 10),show="*")
+    password_entry = Entry(dbWindows,textvariable = pass_var,font=("bold", 10),show="*",bg='#74927A',fg='#fff')
     password_entry.place(x=120,y=130)
-    hn_entry = Entry(dbWindows,textvariable = hn_var,font=("bold", 10))
+    hn_entry = Entry(dbWindows,textvariable = hn_var,font=("bold", 10),bg='#74927A',fg='#fff')
     hn_entry.place(x=120,y=160)
-    hn_hospcode = Entry(dbWindows,textvariable = hospcode_var,font=("bold", 10))
+    hn_hospcode = Entry(dbWindows,textvariable = hospcode_var,font=("bold", 10),bg='#74927A',fg='#fff')
     hn_hospcode.place(x=120,y=190)
 
-    sub_btn=Button(dbWindows,text = 'บันทึก',font=("bold", 12),command=dbSubmit)
-    sub_btn.place(x=220,y=230)
-    sub_btn=Button(dbWindows,text = 'ทดสอบการเชื่อมต่อ',font=("bold", 12),command=testConnectDB)
-    sub_btn.place(x=60,y=230)
+    lbl_printer = Label(dbWindows, text="select Printer",font=("bold", 10),bg='#235D3A',fg='#fff') 
+    lbl_printer.place(x=15,y=220)
     
+    combo_print = Combobox(dbWindows, width=20,textvariable=print_var)
+    combo_print.place(x=120,y=220)
+
+    print_list = []
+    printers = list(win32print.EnumPrinters(2))
+    for i in printers:
+        print_list.append(i[2])
+    print(print_list)
+    # Put printers in combobox
+    combo_print['values'] = print_list
+    
+
+    sub_btn=Button(dbWindows,text = 'บันทึก',font=("bold", 12),bg='#73C088',command=dbSubmit)
+    sub_btn.place(x=220,y=275)
+    sub_btn=Button(dbWindows,text = 'ทดสอบการเชื่อมต่อ',font=("bold", 12),bg='#73C088',command=testConnectDB)
+    sub_btn.place(x=60,y=275)
+    
+    dbWindows.lift()
+    dbWindows.attributes("-topmost", True)
+    dbWindows.mainloop()
      
-    
 def gui():
     
     def handle_focus(event):
@@ -260,13 +349,20 @@ def gui():
         config.set('ClaimType','CODE',radio.get())
         with open('app-config.ini', 'w') as configfile:
             config.write(configfile)
+    
+    def activePrint(): 
+        config = configparser.RawConfigParser()
+        config.read('app-config.ini')
+        config.set('ClaimType','activeprint',ckbox_print.get())
+        with open('app-config.ini', 'w') as configfile:
+            config.write(configfile)
     #Main Windows
     root = Tk()
     root.geometry('540x300+500+300')
     root['bg']='#235D3A'
     root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO]")
+    root.resizable(False, False)
     
-     
     tv_cid = StringVar()
     tv_name = StringVar()
     tv_birth = StringVar()
@@ -278,8 +374,8 @@ def gui():
     tv_status = StringVar()
     tv_claimtype_code = StringVar()
     radio = StringVar()
-    
-    
+    ckbox_print = StringVar()
+     
     #ส่วนของการแสดงผลข้อมูลบัตรประชาชน
     labelframe = LabelFrame(root, text="ข้อมูลบัตรประชาชน",font=("bold",12),width='300',height='190', bg='#235D3A',fg='#fff')
     labelframe.place(x=15,y=60)
@@ -324,6 +420,13 @@ def gui():
     lbl_createdate = Label(root, width=10, textvariable=tv_createdate,font=("bold", 10),bg='#74927A',fg='#fff')
     lbl_createdate.place(x=420,y=150)
 
+    #checkBox active Printer
+    ckbox_activePrint = Checkbutton(root, text="Active Print", variable=ckbox_print,font=("bold", 10),bg='#235D3A',fg='#74927A'
+                                ,onvalue='Y', offvalue='N',command=activePrint)
+    ckbox_activePrint.place(x=330,y=190)
+    ckbox_activePrint.deselect()
+     
+
     #สถานะบัต่รประชาชน
     lbl_status = Label(root, width=30, textvariable=tv_status,font=("bold", 16),bg='#235D3A',fg='#fff')
     lbl_status.place(x=90,y=15)
@@ -362,7 +465,6 @@ def gui():
     root.attributes("-topmost", True)
     root.bind("<FocusIn>", handle_focus)
     root.mainloop()
-
 
 def main():
     gui()

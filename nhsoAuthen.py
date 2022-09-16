@@ -5,10 +5,11 @@ Created on Mon May  2 08:31:13 2022
 @author: BT
 """
 import requests
-import time
 import configparser
 from datetime import datetime
-#from win32printing import Printer
+from win32printing import Printer
+import getData
+import logging
 #URL API AuthenCode
 url_read_only ="http://127.0.0.1:8189/api/smartcard/read-card-only?readImageFlag=false"
 url_read="http://127.0.0.1:8189/api/smartcard/read?readImageFlag=false"
@@ -33,12 +34,6 @@ def readCard():
 
         else:
             if response.status_code ==200:
-                cid = result["pid"]
-                panme = result["fname"]
-                panme = result["lname"]
-                subInscl = result["subInscl"]
-                age = result["age"]
-                correLation =result["correlationId"]
                 return result
             elif response.status_code ==500:
                 print("500")
@@ -88,12 +83,15 @@ def confirmSave(hometel,cid,hn):
                         print("[createDate:]",result_save['createdDate'])
                         print("----------------------------------------")
 
+                        pid = result_save['pid']
                         printClaimType = result_save['claimType']
                         printClaimCode= result_save['claimCode']
                         printCreatedDate = result_save['createdDate']
                         #toPrinter(printClaimType,printClaimCode,printCreatedDate)
-                        #print(result_save["claimCode"])
-                        #playsound('authenSuccess.mp3')
+
+                        getData.insertDB(pid,printClaimType,printClaimCode,printCreatedDate) 
+                        
+
                         return result_save
 
 
@@ -179,11 +177,7 @@ def checkLatedAuthen(cid):
                 print("claimDateTime:" ,result_lasted["claimDateTime"])
                 print("---------------------------------------------")
 
-
-                printClaimType = result_lasted['claimType']
-                printClaimCode = result_lasted['claimCode']
-                printClaimDateTime = result_lasted['claimDateTime']
-
+            
                 lastDate = result_lasted['claimDateTime'].split(sep='T')[0]
                 nowDate =str(datetime.date(datetime.now()))
 
@@ -230,4 +224,18 @@ def returnLatedAuthen(cid):
         except requests.exceptions.Timeout as e:
             print(e)
 
+def toPrinter(cliamType,printClaimCode,CreatedDate):
+    font = {
+    "height": 18,
+}
+    with Printer(linegap=2) as printer:
+        printer.text("ประเภท  "+cliamType, font_config=font)
+        printer.text("วันที่"+CreatedDate, font_config=font)
+        printer.text("ClaimCode"+printClaimCode, font_config=font)
+        printer.text(" ", font_config=font)
+        printer.text(" ", font_config=font)
+        printer.text(" ", font_config=font)
+        
+        printer.new_page()
 #returnLatedAuthen('3729900095098')
+#toPrinter('1234','1234','1234')
