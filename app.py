@@ -2,8 +2,10 @@ from __future__ import print_function
 from asyncio.windows_events import NULL
 from cProfile import label
 from itertools import count
+import logging
 from msilib.schema import ComboBox
 from multiprocessing.sharedctypes import Value
+from tkinter import font
 from tkinter.messagebox import showerror, showinfo, showwarning
 from tkinter.ttk import Combobox
 from turtle import bgcolor, color
@@ -58,11 +60,18 @@ class PrintObserver(CardObserver):
         self.tv_status = tv_status
         self.tv_status.set("กรุณาเสียบบัตรประจำตัวประชาชน")
         self.tv_claim = tv_status
+        
+        
+        
+        
+
+
            
          
     def update(self, observable, actions):
         
         (addedcards, removedcards) = actions
+        
 
         for card in addedcards:
                 hn=""
@@ -74,30 +83,30 @@ class PrintObserver(CardObserver):
                 readcard_api = nhsoAuthen.readCard() #อ่าน CID จาก API
 
                 if readcard_api == False:
-                    self.tv_status.set("กรณาตรวจสอบ NHSO Secure SmartCard Agent") 
+                    self.tv_status.set("กรณาตรวจสอบ NHSO Agent")
                     break
                 elif readcard_api != False:
-                    
-                    hometel = getData.getMobilePhone(cid)
-                    hn= getData.getHn(cid)
+                    chkConnect=mydb.testConnectDB()
+                    if chkConnect == False:
+                        self.tv_status.set("!!!ตรวจสอบการเชื่อมต่อ Database!!")
+                        break
+                    else:
+                        hometel = getData.getMobilePhone(cid)
+                        hn= getData.getHn(cid)
                 
                 if hn =="":
                     self.tv_status.set("!!ไม่ข้อมูล HN ใน HOSxP!!")
+                    logging.info("HN Data Not Found in Database")
                     continue 
 
                 if hometel =="":
                     inputtelGui()
                     hometel = tel
-                   
+                    
+                 
                 if hometel.isnumeric() and len(hometel)==10:
-                    try:
-                        statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
-                        
-                    except:
-                        print("[]")
-                    else:
-                        self.tv_status.set("--กำลังตรวจสอบข้อมูล-")
-                        
+                    statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
+                    self.tv_status.set("--กำลังตรวจสอบข้อมูล-") 
                 else:
                     print("[INFO:] Hometel is Error")
                     #nhsoAuthen.playsound("noHomeTel.mp3")
@@ -105,7 +114,6 @@ class PrintObserver(CardObserver):
                     break
 
               
-                   
                 if statusLastAuthen is True:
                     #nhsoAuthen.playsound('authenRepeat.mp3')
                     print("[Warnning:] ไม่สามารถขอ Authen ซ้ำในวันเดียวกันได้")
@@ -123,7 +131,7 @@ class PrintObserver(CardObserver):
                     
                     AuthenDetial=nhsoAuthen.confirmSave(hometel, cid, hn)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
-                    print(AuthenDetial)
+                    
 
                     if AuthenDetial == False: #Authen มากกว่า 2 ครั้ง
                         lastDataAuthen = nhsoAuthen.returnLatedAuthen(cid)
@@ -196,9 +204,11 @@ def inputtelGui():
 
     lbl_tel = Label(telWindows,text ="กรุณาใส่หมายเลขโทรศัพท์",font=("bold", 16),bg='#73C088',fg='#000')
     lbl_tel.place(x=10,y=10)
+
     tel_entry = Entry(telWindows,width=10,textvariable = mobile,font=("bold", 25),bg='#74927A',fg='#fff')
     tel_entry.place(x=10,y=50)
     tel_entry.focus()
+
     sub_btn=Button(telWindows,text = 'บันทึก',font=("bold", 16),bg='#235D3A',fg='#fff',command=telSubmit)
     sub_btn.place(x=200,y=50)
 
@@ -212,6 +222,7 @@ def dbSettingGui():
     def settingClose():
         dbWindows.destroy()
 
+     
     def dbSubmit(): 
         config = configparser.RawConfigParser()
         config.read('app-config.ini')
@@ -259,6 +270,7 @@ def dbSettingGui():
     dbWindows.geometry('320x320+610+300')
     dbWindows['bg']='#235D3A'
     dbWindows.title("Database Connection")
+    
     host_var =StringVar(dbWindows)
     database_var =StringVar(dbWindows)
     user_var =StringVar(dbWindows)
@@ -329,9 +341,10 @@ def dbSettingGui():
     
 
     sub_btn=Button(dbWindows,text = 'บันทึก',font=("bold", 12),bg='#73C088',command=dbSubmit)
-    sub_btn.place(x=220,y=275)
+    sub_btn.place(x=250,y=275)
     sub_btn=Button(dbWindows,text = 'ทดสอบการเชื่อมต่อ',font=("bold", 12),bg='#73C088',command=testConnectDB)
-    sub_btn.place(x=60,y=275)
+    sub_btn.place(x=110,y=275)
+     
     
     dbWindows.lift()
     dbWindows.attributes("-topmost", True)
@@ -361,6 +374,7 @@ def gui():
     root.geometry('540x300+500+300')
     root['bg']='#235D3A'
     root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO]")
+    root.iconbitmap('image/authentication.ico')
     root.resizable(False, False)
     
     tv_cid = StringVar()

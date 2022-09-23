@@ -20,23 +20,26 @@ url_lasted_authen_code="http://127.0.0.1:8189/api/nhso-service/latest-authen-cod
 config = configparser.RawConfigParser()
 config.read('app-config.ini')
 HospCode = config.get('HOSxP', 'HOSPCODE')
+insertdb = config.get('HOSxP', 'insertdb')
+logging.basicConfig(filename='authen.log',level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')
 
 def readCard():
     while True:
         try:
             response = requests.get(url_read, verify=False,timeout=2)
             result = response.json()
-            print("[INFO][url_read] Response Status Code",response.status_code)
+            #logging.info(response.status_code)
             #print(result)
 
         except requests.exceptions.Timeout as e:
-                print(e)
+            logging.info(e)
+            return False
 
         else:
             if response.status_code ==200:
                 return result
             elif response.status_code ==500:
-                print("500")
+                logging.info("HTTP response status codes 500")
                 return False
 
 
@@ -48,11 +51,10 @@ def confirmSave(hometel,cid,hn):
         try:
             response = requests.get(url_read, verify=False,timeout=2)
             result = response.json()
-            print("[INFO][url_read] Response Status Code",response.status_code)
-            #print(result)
-
+            logging.info("[INFO][url_read] Response Status Code",response.status_code)
+          
         except requests.exceptions.Timeout as e:
-                print(e)
+                logging.critical(e)
 
         else:
             if response.status_code ==200:
@@ -88,26 +90,25 @@ def confirmSave(hometel,cid,hn):
                         printClaimCode= result_save['claimCode']
                         printCreatedDate = result_save['createdDate']
                         #toPrinter(printClaimType,printClaimCode,printCreatedDate)
-
-                        getData.insertDB(pid,printClaimType,printClaimCode,printCreatedDate) 
-                        
-
+                        if insertdb =="Y":
+                            getData.insertDB(pid,printClaimType,printClaimCode,printCreatedDate) 
                         return result_save
 
 
-                    elif response_save.status_code ==400:
-                        print(result_save["errors"][0]["defaultMessage"])
+                    elif response_save.status_code ==400:                        
+                        logging.warning(result_save["errors"][0]["defaultMessage"])
+                        return True
 
                     else:
-                       print("ไม่สามารถติดต่อกับ Service สปสช. ได้")
+                       logging.critical("ไม่สามารถติดต่อกับ Service สปสช. ได้")
                        return True
                         
 
                 except requests.exceptions.Timeout as e:
-                    print(e)
+                    logging.warning(e)
 
             else:
-                print("ไม่สามารถติดต่อกับ Service สปสช. ได้")
+                logging.critical("ไม่สามารถติดต่อกับ Service สปสช. ได้")
                 return True 
 
 def saveDraft(hometel,cid):
@@ -177,7 +178,6 @@ def checkLatedAuthen(cid):
                 print("claimDateTime:" ,result_lasted["claimDateTime"])
                 print("---------------------------------------------")
 
-            
                 lastDate = result_lasted['claimDateTime'].split(sep='T')[0]
                 nowDate =str(datetime.date(datetime.now()))
 
@@ -191,8 +191,6 @@ def checkLatedAuthen(cid):
 
                     print("[INFO] มีการขอ Authen แล้ว")
                     #toPrinter(printClaimType,printClaimCode,printClaimDateTime)
-                    
-
                     return True
                 elif result_lasted["claimType"] != claimType and lastDate ==nowDate: #มีการขอ Authen แต่คนละประเภท
                     print("[INFO] มีการขอ Authen Code แล้วในวันนี้ แต่คนละ ClaimType")
@@ -204,10 +202,9 @@ def checkLatedAuthen(cid):
                 return False
 
         except requests.exceptions.Timeout as e:
-            print(e)
+            logging.critical(e)
 
 def returnLatedAuthen(cid):
-    claimType = config.get('ClaimType', 'code')
     while True:
         try:
             response_lasted = requests.get(url_lasted_authen_code+cid,timeout=1)
@@ -222,7 +219,7 @@ def returnLatedAuthen(cid):
 
                 return result_lasted
         except requests.exceptions.Timeout as e:
-            print(e)
+            logging.critical(e)
 
 def toPrinter(cliamType,printClaimCode,CreatedDate):
     font = {
