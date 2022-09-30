@@ -58,16 +58,14 @@ class PrintObserver(CardObserver):
         self.tv_claimcode = tv_claimcode
         self.tv_createdate = tv_createdate
         self.tv_status = tv_status
-        self.tv_status.set("กรุณาเสียบบัตรประจำตัวประชาชน")
         self.tv_claim = tv_status
-        
-        
-        
-        
 
-
-           
-         
+        chk = nhsoAuthen.checkTerminal()
+        if chk ==False or chk ==[]:
+            self.tv_status.set("ไม่พบ SmartCard Reader")
+        else:
+            self.tv_status.set("กรุณาเสียบบัตรประจำตัวประชาชน")
+        
     def update(self, observable, actions):
         
         (addedcards, removedcards) = actions
@@ -232,6 +230,7 @@ def dbSettingGui():
         config.set('HOSxP','password',pass_var.get())
         config.set('HOSxP','hn',hn_var.get())
         config.set('HOSxP','hospcode',hospcode_var.get())
+        config.set('HOSxP','insertdb',insertdb_var.get())
         with open('app-config.ini', 'w') as configfile:
             config.write(configfile)
         settingClose()
@@ -265,9 +264,11 @@ def dbSettingGui():
             showwarning("nhsoAuthen","CONNECTION ERROR!!")
             print ("ERROR IN CONNECTION")
             return False
+ 
+    
 
     dbWindows=Tk()
-    dbWindows.geometry('320x320+610+300')
+    dbWindows.geometry('320x360+610+300')
     dbWindows['bg']='#235D3A'
     dbWindows.title("Database Connection")
     
@@ -278,6 +279,7 @@ def dbSettingGui():
     hn_var =StringVar(dbWindows)
     hospcode_var=StringVar(dbWindows)
     print_var = StringVar(dbWindows)
+    insertdb_var = StringVar(dbWindows)
    
     config = configparser.RawConfigParser()
     config.read('app-config.ini')
@@ -287,6 +289,8 @@ def dbSettingGui():
     password =config.get('HOSxP','password')
     hn = config.get('HOSxP','hn')
     hospcode =  config.get('HOSxP','hospcode')
+    insert_db =  config.get('HOSxP','insertdb')
+    
     
     host_var.set(ip)
     database_var.set(db)
@@ -294,42 +298,48 @@ def dbSettingGui():
     pass_var.set(password)
     hn_var.set(hn)
     hospcode_var.set(hospcode)
+    insertdb_var.set(insert_db)
 
         #ส่วนของการแสดงผลข้อมูลบัตรประชาชน
-    labelframe = LabelFrame(dbWindows, text="ตั้งค่าการเชื่อมต่อฐานข้อมูล",font=("bold",10),width='300',height='250', bg='#235D3A',fg='#fff')
+    labelframe = LabelFrame(dbWindows, text="ตั้งค่าการเชื่อมต่อฐานข้อมูล",font=("Tahoma",10),width='300',height='300', bg='#235D3A',fg='#fff')
     labelframe.place(x=10,y=10)
-    label_host = Label(dbWindows, text="Host",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_host = Label(dbWindows, text="Host",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_host.place(x=15,y=40)
-    label_database = Label(dbWindows, text="Databasae",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_database = Label(dbWindows, text="Databasae",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_database.place(x=15,y=70)
-    label_user = Label(dbWindows, text="user",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_user = Label(dbWindows, text="user",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_user.place(x=15,y=100)
-    label_pass = Label(dbWindows, text="password",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_pass = Label(dbWindows, text="password",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_pass.place(x=15,y=130)
-    label_hn = Label(dbWindows, text="จำนวนหลัก HN",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_hn = Label(dbWindows, text="จำนวนหลัก HN",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_hn.place(x=15,y=160)
-    label_hospcode = Label(dbWindows, text="รหัสโรงพยาบาล",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_hospcode = Label(dbWindows, text="รหัสโรงพยาบาล",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_hospcode.place(x=15,y=190)
+    label_insertDB = Label(dbWindows, text="InsertData",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_insertDB.place(x=15,y=220)
+    lbl_printer = Label(dbWindows, text="select Printer",width=15,font=("Tahoma", 10),bg='#235D3A',fg='#fff',anchor='e') 
+    lbl_printer.place(x=15,y=250)
 
-    host_entry = Entry(dbWindows,textvariable = host_var,font=("bold", 10),bg='#74927A',fg='#fff')
+
+    host_entry = Entry(dbWindows,textvariable = host_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    host_entry.place(x=150,y=40)
+    database_entry = Entry(dbWindows,textvariable = database_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    database_entry.place(x=150,y=70)
+    user_entry = Entry(dbWindows,textvariable = user_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    user_entry.place(x=150,y=100)
+    password_entry = Entry(dbWindows,textvariable = pass_var,font=("Tahoma", 10),show="*",bg='#74927A',fg='#fff')
+    password_entry.place(x=150,y=130)
+    hn_entry = Entry(dbWindows,textvariable = hn_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    hn_entry.place(x=150,y=160)
+    hn_hospcode = Entry(dbWindows,textvariable = hospcode_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    hn_hospcode.place(x=150,y=190)
+    insert_db = Entry(dbWindows,textvariable = insertdb_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
+    insert_db.place(x=150,y=220)
+
     
-    host_entry.place(x=120,y=40)
-    database_entry = Entry(dbWindows,textvariable = database_var,font=("bold", 10),bg='#74927A',fg='#fff')
-    database_entry.place(x=120,y=70)
-    user_entry = Entry(dbWindows,textvariable = user_var,font=("bold", 10),bg='#74927A',fg='#fff')
-    user_entry.place(x=120,y=100)
-    password_entry = Entry(dbWindows,textvariable = pass_var,font=("bold", 10),show="*",bg='#74927A',fg='#fff')
-    password_entry.place(x=120,y=130)
-    hn_entry = Entry(dbWindows,textvariable = hn_var,font=("bold", 10),bg='#74927A',fg='#fff')
-    hn_entry.place(x=120,y=160)
-    hn_hospcode = Entry(dbWindows,textvariable = hospcode_var,font=("bold", 10),bg='#74927A',fg='#fff')
-    hn_hospcode.place(x=120,y=190)
-
-    lbl_printer = Label(dbWindows, text="select Printer",font=("bold", 10),bg='#235D3A',fg='#fff') 
-    lbl_printer.place(x=15,y=220)
     
     combo_print = Combobox(dbWindows, width=20,textvariable=print_var)
-    combo_print.place(x=120,y=220)
+    combo_print.place(x=150,y=250)
 
     print_list = []
     printers = list(win32print.EnumPrinters(2))
@@ -341,9 +351,9 @@ def dbSettingGui():
     
 
     sub_btn=Button(dbWindows,text = 'บันทึก',font=("bold", 12),bg='#73C088',command=dbSubmit)
-    sub_btn.place(x=250,y=275)
+    sub_btn.place(x=250,y=320)
     sub_btn=Button(dbWindows,text = 'ทดสอบการเชื่อมต่อ',font=("bold", 12),bg='#73C088',command=testConnectDB)
-    sub_btn.place(x=110,y=275)
+    sub_btn.place(x=110,y=320)
      
     
     dbWindows.lift()
@@ -371,9 +381,9 @@ def gui():
             config.write(configfile)
     #Main Windows
     root = Tk()
-    root.geometry('540x300+500+300')
+    root.geometry('550x300+500+300')
     root['bg']='#235D3A'
-    root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO]")
+    root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO] v1.0")
     root.iconbitmap('image/authentication.ico')
     root.resizable(False, False)
     
@@ -391,59 +401,59 @@ def gui():
     ckbox_print = StringVar()
      
     #ส่วนของการแสดงผลข้อมูลบัตรประชาชน
-    labelframe = LabelFrame(root, text="ข้อมูลบัตรประชาชน",font=("bold",12),width='300',height='190', bg='#235D3A',fg='#fff')
+    labelframe = LabelFrame(root, text="ข้อมูลบัตรประชาชน",font=("Tahoma",12),width='300',height='190', bg='#235D3A',fg='#fff')
     labelframe.place(x=15,y=60)
 
-    label_cid = Label(root, text="เลขบัตรประชาชน",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_cid = Label(root, text="เลขบัตรประชาชน",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_cid.place(x=20,y=90)
-    label_name = Label(root, text="ชื่อ-นามสกุล",width=10,font=("bold", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
+    label_name = Label(root, text="ชื่อ-นามสกุล",width=10,font=("Tahoma", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
     label_name.place(x=20,y=120)
-    label_birth = Label(root, text="อายุ",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_birth = Label(root, text="อายุ",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_birth.place(x=20,y=150)
-    label_pttype = Label(root, text="สิทธิการรักษา",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_pttype = Label(root, text="สิทธิการรักษา",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_pttype.place(x=20,y=180)
-    label_hometel = Label(root, text="เบอร์โทรศัพท์",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_hometel = Label(root, text="เบอร์โทรศัพท์",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_hometel.place(x=20,y=210)
     #
-    lbl_cid = Label(root, width=20, textvariable=tv_cid,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_cid = Label(root, width=20, textvariable=tv_cid,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_cid.place(x=120,y=90)
-    lbl_name = Label(root, width=20, textvariable=tv_name,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_name = Label(root, width=20, textvariable=tv_name,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_name.place(x=120,y=120)
-    lbl_birth = Label(root, width=20, textvariable=tv_birth,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_birth = Label(root, width=20, textvariable=tv_birth,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_birth.place(x=120,y=150)
-    lbl_pttype = Label(root, width=20, textvariable=tv_pttype,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_pttype = Label(root, width=20, textvariable=tv_pttype,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_pttype.place(x=120,y=180)
-    lbl_hometel = Label(root, width=20, textvariable=tv_hometel,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_hometel = Label(root, width=20, textvariable=tv_hometel,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_hometel.place(x=120,y=210)
     
     #ส่วนของการแสดงผลข้อมูลยืนยันตัวตน
-    labelframe = LabelFrame(root, text="ข้อมูลยืนยันตัวตน",font=("bold",12),width='200',height='190', bg='#235D3A',fg='#fff')
+    labelframe = LabelFrame(root, text="ข้อมูลยืนยันตัวตน",font=("Tahoma",12),width='220',height='190', bg='#235D3A',fg='#fff')
     labelframe.place(x=320,y=60)
     #
-    label_claimType = Label(root, text="ClaimType",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_claimType = Label(root, text="ClaimType",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_claimType.place(x=330,y=90)
-    label_claimCode = Label(root, text="claimCode",width=10,font=("bold", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
+    label_claimCode = Label(root, text="claimCode",width=10,font=("Tahoma", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
     label_claimCode.place(x=330,y=120)
-    label_datetime = Label(root, text="วันที่เข้ารับบริการ",width=10,font=("bold", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_datetime = Label(root, text="วันที่เข้ารับบริการ",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_datetime.place(x=330,y=150)
     #
-    lbl_claimtype = Label(root, width=10, textvariable=tv_claimtype,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_claimtype = Label(root, width=15, textvariable=tv_claimtype,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_claimtype.place(x=420,y=90)
-    lbl_claimcode = Label(root, width=10, textvariable=tv_claimcode,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_claimcode = Label(root, width=15, textvariable=tv_claimcode,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_claimcode.place(x=420,y=120)
-    lbl_createdate = Label(root, width=10, textvariable=tv_createdate,font=("bold", 10),bg='#74927A',fg='#fff')
+    lbl_createdate = Label(root, width=15, textvariable=tv_createdate,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
     lbl_createdate.place(x=420,y=150)
 
     #checkBox active Printer
-    ckbox_activePrint = Checkbutton(root, text="Active Print", variable=ckbox_print,font=("bold", 10),bg='#235D3A',fg='#74927A'
+    ckbox_activePrint = Checkbutton(root, text="Active Print", variable=ckbox_print,font=("Tahoma", 10),bg='#235D3A',fg='#74927A'
                                 ,onvalue='Y', offvalue='N',command=activePrint)
     ckbox_activePrint.place(x=330,y=190)
     ckbox_activePrint.deselect()
      
 
     #สถานะบัต่รประชาชน
-    lbl_status = Label(root, width=30, textvariable=tv_status,font=("bold", 16),bg='#235D3A',fg='#fff')
-    lbl_status.place(x=90,y=15)
+    lbl_status = Label(root, width=30, textvariable=tv_status,font=("Tahoma", 16),bg='#235D3A',fg='#fff')
+    lbl_status.place(x=100,y=15)
     
     #ประเภทการเข้ารับบริการ claim type
     R1 = Radiobutton(root, text="OPD/ IPD/ PP", variable=radio,bg='#73C088', value='PG0060001',
@@ -464,7 +474,7 @@ def gui():
 
     R4 = Radiobutton(root, text="UCEP PLUS", variable=radio,bg='#73C088', value='PG0120001' ,  
                   command=selection)  
-    R4.place(x=350,y=260) 
+    R4.place(x=355,y=260) 
  
     img = PhotoImage(file="image/icons8-config-32.png")
     #canvas.create_image(0,0, anchor=NW, image=img)

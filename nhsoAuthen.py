@@ -16,12 +16,36 @@ url_read="http://127.0.0.1:8189/api/smartcard/read?readImageFlag=false"
 url_confirm_save="http://127.0.0.1:8189/api/nhso-service/confirm-save"
 url_save_draft="http://127.0.0.1:8189/api/nhso-service/save-as-draft"
 url_lasted_authen_code="http://127.0.0.1:8189/api/nhso-service/latest-authen-code/"
+url_terminal="http://127.0.0.1:8189/api/smartcard/terminals"
 
 config = configparser.RawConfigParser()
 config.read('app-config.ini')
 HospCode = config.get('HOSxP', 'HOSPCODE')
 insertdb = config.get('HOSxP', 'insertdb')
+
+ 
 logging.basicConfig(filename='authen.log',level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')
+logging.FileHandler('authen.log', mode='w')
+
+def checkTerminal():
+    while True:
+        try:
+            response = requests.get(url_terminal, verify=False,timeout=2)
+            result = response.json()
+            #logging.info(response.status_code)
+            print(result)
+
+        except requests.exceptions.Timeout as e:
+            logging.info(e)
+            return False
+
+        else:
+            if response.status_code ==200:
+                return result
+            elif response.status_code ==500:
+                logging.info("HTTP response status codes 500")
+                return False
+
 
 def readCard():
     while True:
@@ -236,3 +260,4 @@ def toPrinter(cliamType,printClaimCode,CreatedDate):
         printer.new_page()
 #returnLatedAuthen('3729900095098')
 #toPrinter('1234','1234','1234')
+ 
