@@ -57,14 +57,15 @@ def readCard():
 
         except requests.exceptions.Timeout as e:
             logging.info(e)
-            return False
+            print(e)
+            #return False
 
         else:
             if response.status_code ==200:
                 return result
             elif response.status_code ==500:
                 logging.info("HTTP response status codes 500")
-                return False
+                #return False
 
 
 
@@ -113,6 +114,7 @@ def confirmSave(hometel,cid,hn):
                         printClaimType = result_save['claimType']
                         printClaimCode= result_save['claimCode']
                         printCreatedDate = result_save['createdDate']
+                        
                         #toPrinter(printClaimType,printClaimCode,printCreatedDate)
                         if insertdb =="Y":
                             getData.insertDB(pid,printClaimType,printClaimCode,printCreatedDate) 

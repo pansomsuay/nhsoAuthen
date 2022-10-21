@@ -77,11 +77,11 @@ class PrintObserver(CardObserver):
                 statusLastAuthen=False
                 print("+Inserted: ", toHexString(card.atr))    
                 self.tv_status.set("----กำลังอ่านข้อมูลจากบัตร---")
-                cid = getData.checkCard()   #อ่าน CID จาก SmartCard 
+                #cid = getData.checkCard()   #อ่าน CID จาก SmartCard 
                 readcard_api = nhsoAuthen.readCard() #อ่าน CID จาก API
-
+                
                 if readcard_api == False:
-                    self.tv_status.set("กรณาตรวจสอบ NHSO Agent")
+                    self.tv_status.set("ตรวจสอบ NHSO Agent")
                     break
                 elif readcard_api != False:
                     chkConnect=mydb.testConnectDB()
@@ -89,6 +89,7 @@ class PrintObserver(CardObserver):
                         self.tv_status.set("!!!ตรวจสอบการเชื่อมต่อ Database!!")
                         break
                     else:
+                        cid = readcard_api['pid']
                         hometel = getData.getMobilePhone(cid)
                         hn= getData.getHn(cid)
                 
@@ -104,7 +105,7 @@ class PrintObserver(CardObserver):
                  
                 if hometel.isnumeric() and len(hometel)==10:
                     statusLastAuthen =nhsoAuthen.checkLatedAuthen(cid) #เช็คการขอ Authen ล่าสุดในวันนี้
-                    self.tv_status.set("--กำลังตรวจสอบข้อมูล-") 
+                    self.tv_status.set("--กำลังตรวจสอบข้อมูล--") 
                 else:
                     print("[INFO:] Hometel is Error")
                     #nhsoAuthen.playsound("noHomeTel.mp3")
@@ -222,6 +223,7 @@ def dbSettingGui():
 
      
     def dbSubmit(): 
+        
         config = configparser.RawConfigParser()
         config.read('app-config.ini')
         config.set('HOSxP','ip',host_var.get())
@@ -231,6 +233,7 @@ def dbSettingGui():
         config.set('HOSxP','hn',hn_var.get())
         config.set('HOSxP','hospcode',hospcode_var.get())
         config.set('HOSxP','insertdb',insertdb_var.get())
+
         with open('app-config.ini', 'w') as configfile:
             config.write(configfile)
         settingClose()
@@ -336,8 +339,6 @@ def dbSettingGui():
     insert_db = Entry(dbWindows,textvariable = insertdb_var,font=("Tahoma", 10),bg='#74927A',fg='#fff')
     insert_db.place(x=150,y=220)
 
-    
-    
     combo_print = Combobox(dbWindows, width=20,textvariable=print_var)
     combo_print.place(x=150,y=250)
 
@@ -383,7 +384,7 @@ def gui():
     root = Tk()
     root.geometry('550x300+500+300')
     root['bg']='#235D3A'
-    root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO] v1.0")
+    root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO] v1.01")
     root.iconbitmap('image/authentication.ico')
     root.resizable(False, False)
     
@@ -434,7 +435,7 @@ def gui():
     label_claimType.place(x=330,y=90)
     label_claimCode = Label(root, text="claimCode",width=10,font=("Tahoma", 10),bg='#235D3A' ,fg='#C0EDD0',anchor='e')
     label_claimCode.place(x=330,y=120)
-    label_datetime = Label(root, text="วันที่เข้ารับบริการ",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
+    label_datetime = Label(root, text="วันที่มา",width=10,font=("Tahoma", 10),bg='#235D3A',fg='#C0EDD0',anchor='e')
     label_datetime.place(x=330,y=150)
     #
     lbl_claimtype = Label(root, width=15, textvariable=tv_claimtype,font=("Tahoma", 10),bg='#74927A',fg='#fff',anchor='w')
@@ -454,6 +455,7 @@ def gui():
     #สถานะบัต่รประชาชน
     lbl_status = Label(root, width=30, textvariable=tv_status,font=("Tahoma", 16),bg='#235D3A',fg='#fff')
     lbl_status.place(x=100,y=15)
+    
     
     #ประเภทการเข้ารับบริการ claim type
     R1 = Radiobutton(root, text="OPD/ IPD/ PP", variable=radio,bg='#73C088', value='PG0060001',
