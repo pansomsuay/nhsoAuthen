@@ -135,17 +135,18 @@ def insertDB(pid, cliamType, claimCode, createDate):
         connection = mydb.getConnection()
         cursor = connection.cursor()
         sql = "insert sam_patient_authen (cid, cliam_type, claim_code, create_date,save_date,save_time) values (%s,%s,%s,%s,date(now()),time(now()) )"     
+    
     except pymysql.InternalError as error:
         print("ไม่พบฐานข้อมูล กรุณาสร้างฐานข้อมูลค่ะ")
         return None
 
     try:
         cursor.execute(sql, (pid, cliamType, claimCode, createDate))# 1 row.
-        print
+        connection.commit()
     except pymysql.Error as error:
         print("[Warining]ไม่พบตาราง sam_patient_authen กรุณาสร้างตารางก่อนค่ะ")
         return None
-
+    
     cursor.close()
     connection.close()
 #insertDB("3729900095098", "cliamType", "claimCode", "createDate")

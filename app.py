@@ -32,6 +32,11 @@ import nhsoAuthen
 import win32api
 import win32print
 
+import requests
+import time
+
+import os
+
 
 config = configparser.RawConfigParser()
 config.read('app-config.ini')
@@ -61,10 +66,15 @@ class PrintObserver(CardObserver):
         self.tv_claim = tv_status
 
         chk = nhsoAuthen.checkTerminal()
+        
+
         if chk ==False or chk ==[]:
             self.tv_status.set("ไม่พบ SmartCard Reader")
         else:
             self.tv_status.set("กรุณาเสียบบัตรประจำตัวประชาชน")
+
+        
+        
         
     def update(self, observable, actions):
         
@@ -79,7 +89,7 @@ class PrintObserver(CardObserver):
                 self.tv_status.set("----กำลังอ่านข้อมูลจากบัตร---")
                 #cid = getData.checkCard()   #อ่าน CID จาก SmartCard 
                 readcard_api = nhsoAuthen.readCard() #อ่าน CID จาก API
-                
+                #print(readcard_api)
                 if readcard_api == False:
                     self.tv_status.set("ตรวจสอบ NHSO Agent")
                     break
@@ -87,20 +97,22 @@ class PrintObserver(CardObserver):
                     chkConnect=mydb.testConnectDB()
                     if chkConnect == False:
                         self.tv_status.set("!!!ตรวจสอบการเชื่อมต่อ Database!!")
-                        break
+                        cid = readcard_api['pid']
                     else:
                         cid = readcard_api['pid']
                         hometel = getData.getMobilePhone(cid)
                         hn= getData.getHn(cid)
+                        print(cid)
                 
-                if hn =="":
+                if hn ==" ":
                     self.tv_status.set("!!ไม่ข้อมูล HN ใน HOSxP!!")
                     logging.info("HN Data Not Found in Database")
                     continue 
 
-                if hometel =="":
+                if hometel =="" or hometel is None:
                     inputtelGui()
                     hometel = tel
+                    print(hometel)
                     
                  
                 if hometel.isnumeric() and len(hometel)==10:
@@ -130,9 +142,9 @@ class PrintObserver(CardObserver):
                     
                     AuthenDetial=nhsoAuthen.confirmSave(hometel, cid, hn)
                     #AuthenDetial = nhsoAuthen.saveDraft(hometel,cid)
-                    
+                     
 
-                    if AuthenDetial == False: #Authen มากกว่า 2 ครั้ง
+                    if "error" in AuthenDetial: #Error
                         lastDataAuthen = nhsoAuthen.returnLatedAuthen(cid)
                          
                         self.tv_cid.set(cid)
@@ -143,7 +155,7 @@ class PrintObserver(CardObserver):
                         self.tv_claimtype.set(lastDataAuthen['claimType'])
                         self.tv_claimcode.set(lastDataAuthen['claimCode'])
                         self.tv_createdate.set(lastDataAuthen['claimDateTime'])
-                        self.tv_status.set("!!มีการขอ Authen ผิดเงื่อนไข สปสช.!!")
+                        self.tv_status.set(AuthenDetial['errors'][0]['defaultMessage'])
 
                     elif AuthenDetial == True: #ไม่สามารถเชื่อมต่อ Server ได้
                         self.tv_status.set("!!ไม่สามารถเชื่อมต่อ Service สปสช. ได้!!")
@@ -192,8 +204,45 @@ def inputtelGui():
     def disable_event():
         pass
     
+    def code(value):
+    # inform function to use external/global variable
+
+        global pin
+        
+        if value == '-':
+            # remove last element from `pin`
+            pin = pin[:-1]
+            # remove all from `entry` and put new `pin`
+            e.delete('0', 'end')
+            e.insert('end', pin)
+
+        elif value == '#':
+            # check pin
+            b.command=telSubmit
+           
+
+        else:
+            pin = ' ' # empty string
+            # add number to `pin`
+            pin += value
+            # add number to `entry`
+            e.insert('end', value)
+
+        print("Current:", pin)
+
+    keys = [
+    ['1', '2', '3'],
+    ['4', '5', '6'],
+    ['7', '8', '9'],
+    ['-', '0'],
+    ]
+
+# create global variable
+    
+    
+
     telWindows=Tk()
-    telWindows.geometry('300x130+610+380')
+    telWindows.geometry('180x300+610+380')
     telWindows['bg']='#73C088'
     telWindows.title("nhsoAuthen")
     mobile = StringVar(telWindows)
@@ -202,15 +251,34 @@ def inputtelGui():
     telWindows.protocol("WM_DELETE_WINDOW", disable_event)
 
     lbl_tel = Label(telWindows,text ="กรุณาใส่หมายเลขโทรศัพท์",font=("bold", 16),bg='#73C088',fg='#000')
-    lbl_tel.place(x=10,y=10)
+    lbl_tel.grid(row=0,column=0,columnspan=3)
 
-    tel_entry = Entry(telWindows,width=10,textvariable = mobile,font=("bold", 25),bg='#74927A',fg='#fff')
-    tel_entry.place(x=10,y=50)
-    tel_entry.focus()
+    #tel_entry = Entry(telWindows,width=10,textvariable = mobile,font=("bold", 25),bg='#74927A',fg='#fff')
+    #tel_entry.place(x=10,y=50)
+    #tel_entry.focus()
 
-    sub_btn=Button(telWindows,text = 'บันทึก',font=("bold", 16),bg='#235D3A',fg='#fff',command=telSubmit)
-    sub_btn.place(x=200,y=50)
+    sub_btn=Button(telWindows,text = 'ยืนยัน',font=("bold", 14),bg='#235D3A',fg='#fff',command=telSubmit)
+    sub_btn.grid(row=6, column=2, ipadx=5, ipady=10)
+    
 
+
+
+
+
+    e = Entry(telWindows, textvariable = mobile ,width=18, justify='right',font=("bold", 12),bg='#74927A',fg='#fff')
+    e.grid(row=1, column=0, columnspan=3, ipady=5)
+    e.focus()
+
+# create `buttons` using `keys
+    for y, row in enumerate(keys, 3):
+        for x, key in enumerate(row,0):
+            # `lambda` inside `for` have to use `val=key:code(val)`
+            # instead of direct `code(key)`
+            b = Button(telWindows,text=key, command=lambda val=key:code(val),font=("Tahoma", 14),bg='#235D3A',fg='#fff')
+            b.grid(row=y, column=x, ipadx=17, ipady=10)
+
+
+    
     telWindows.lift()
     telWindows.attributes("-topmost", True)
     telWindows.mainloop()
@@ -384,7 +452,7 @@ def gui():
     root = Tk()
     root.geometry('550x300+500+300')
     root['bg']='#235D3A'
-    root.title("ระบบยืนยันตัวตนเข้ารับบริการ [AuthenNHSO] v1.01")
+    root.title("ระบบยืนยันตัวตนเข้ารับบริการ v1.02 SamCamTeam สุพรรณบุรี")
     root.iconbitmap('image/authentication.ico')
     root.resizable(False, False)
     
@@ -463,20 +531,19 @@ def gui():
     R1.place(x=20,y=260)  
     R1.select()
 
-    R2 = Radiobutton(root, text="Home Isolation", variable=radio,bg='#73C088', value='PG0090001' ,  
-                  command=selection)  
-    R2.place(x=120,y=260)   
+     
+
     R3 = Radiobutton(root, text="Self Isolation", variable=radio,bg='#73C088',value='PG0110001' ,  
                   command=selection)  
-    R3.place(x=225,y=260)
+    R3.place(x=120,y=260)
     
     R4 = Radiobutton(root, text="HD", variable=radio,bg='#73C088',value='PG0130001' ,  
                   command=selection)  
-    R4.place(x=312,y=260) 
+    R4.place(x=215,y=260) 
 
     R4 = Radiobutton(root, text="UCEP PLUS", variable=radio,bg='#73C088', value='PG0120001' ,  
                   command=selection)  
-    R4.place(x=355,y=260) 
+    R4.place(x=255,y=260) 
  
     img = PhotoImage(file="image/icons8-config-32.png")
     #canvas.create_image(0,0, anchor=NW, image=img)
